@@ -5,6 +5,8 @@ plugin-shadow = "8.1.1"
 
 kotlin = "1.8.22"
 kotlinx-coroutines = "1.7.1"
+kotlinx-serialization = "1.5.1"
+kotlinx-uuid = "0.0.20"
 okio = "3.3.0"
 
 slf4j-api = "1.7.30"
@@ -15,6 +17,9 @@ adventure-api = "4.11.0"
 
 [libraries]
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-uuid = { module = "app.softwork:kotlinx-uuid-core", version.ref = "kotlinx-uuid" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
