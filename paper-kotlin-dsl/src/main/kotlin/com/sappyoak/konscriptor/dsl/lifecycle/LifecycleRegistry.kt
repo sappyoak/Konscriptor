@@ -1,10 +1,14 @@
 package com.sappyoak.konscriptor.dsl.lifecycle
 
+import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.ConcurrentHashMap
 
-class LifecycleRegistry {
+class LifecycleRegistry(globalCoroutineScope: CoroutineScope) {
+    val lifecycleScope = LifecycleCoroutineScope(globalCoroutineScope)
+
     init {
         registerLifecycle(DefaultLifecycle(LifecycleTag.GlobalTag))
+        globalLifecycle.addEventHandle(Int.MIN_VALUE, lifecycleScope)
     }
 
     private val registry: MutableMap<LifecycleTag, Lifecycle> = ConcurrentHashMap()
