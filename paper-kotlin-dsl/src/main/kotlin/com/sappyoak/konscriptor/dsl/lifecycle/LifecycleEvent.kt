@@ -2,25 +2,6 @@ package com.sappyoak.konscriptor.dsl.lifecycle
 
 import java.io.File
 
-@JvmInline
-value class ShutdownReason(val reason: String) {
-    override fun toString(): String = "Shutdown because of $reason"
-
-    companion object {
-        val Unknown: ShutdownReason = ShutdownReason("unknown reason")
-    }
-}
-
-@JvmInline
-value class PauseReason(val reason: String) {
-    override fun toString(): String = "Paused because of $reason"
-
-    companion object {
-        val Unknown: PauseReason = PauseReason("unknown reason")
-    }
-}
-
-
 sealed class LifecycleEvent(open val tag: LifecycleTag) {
     data class Shutdown(override val tag: LifecycleTag, val time: Long, val reason: ShutdownReason = ShutdownReason.Unknown) : LifecycleEvent(tag)
     data class Initialize(override val tag: LifecycleTag, val time: Long) : LifecycleEvent(tag)
@@ -32,6 +13,27 @@ sealed class LifecycleEvent(open val tag: LifecycleTag) {
     data class Recompile(override val tag: LifecycleTag, val time: Long) : LifecycleEvent(tag)
     data class Corrupted(override val tag: LifecycleTag, val time: Long, val file: File) : LifecycleEvent(tag)
     data class ScriptLoad(override val tag: LifecycleTag, val time: Long, val file: File) : LifecycleEvent(tag)
-    data class ScriptUnload(override val tag: LifecycleTag, val time: Long, val file: File, val reason: String = "") : LifecycleEvent(tag)
+    data class ScriptUnload(override val tag: LifecycleTag, val time: Long, val file: File, val reason: UnloadReason = UnloadReason.Unknown) : LifecycleEvent(tag)
     data class ScriptDependencyLoad(override val tag: LifecycleTag, val time: Long, val scriptName: String, val dependencies: Set<File> = hashSetOf()) : LifecycleEvent(tag)
+}
+
+@JvmInline
+value class ShutdownReason(val reason: String) {
+    companion object {
+        val Unknown: ShutdownReason = ShutdownReason("unknown")
+    }
+}
+
+@JvmInline
+value class PauseReason(val reason: String) {
+    companion object {
+        val Unknown: PauseReason = PauseReason("unknown")
+    }
+}
+
+@JvmInline
+value class UnloadReason(val reason: String) {
+    companion object {
+        val Unknown: UnloadReason = UnloadReason("unknown")
+    }
 }
