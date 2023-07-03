@@ -1,8 +1,8 @@
 package com.sappyoak.konscriptor.common.logging
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.selects.*
 import java.util.concurrent.ConcurrentHashMap
 
 class LoggingContext(private val delegateProvider: DelegateProvider, scope: CoroutineScope) {
@@ -33,5 +33,22 @@ class LoggingContext(private val delegateProvider: DelegateProvider, scope: Coro
     private fun onReceive(action: String) {
         messages.add(action)
     }
+}
 
+suspend fun <T> receiveBatch(
+    channel: ReceiveChannel<T>,
+    maxTimeMillis: Long,
+    maxSize: Int
+): List<T> {
+    val batch = mutableListOf<T>()
+    whileSelect {
+        onTimeout(maxTimeMillis) { false }
+        channel.onReceiveCatching { result ->
+            result.onFailure { if (it != null) throw it }
+                .onClosed { return@onReceiveCatching false }
+                .onSuccess { batch += it }
+            batch.size < maxSize
+        }
+    }
+    return batch
 }
