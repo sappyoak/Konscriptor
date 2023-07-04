@@ -3,7 +3,7 @@ package com.sappyoak.konscriptor.common.concurrent
 interface Scheduler {
     val isMainThread: Boolean
 
-    fun cancelTask(taskId: Int)
+    fun cancelTask(taskID: Int)
     fun getPendingTasks(): List<ScheduledTask>
 
     /**

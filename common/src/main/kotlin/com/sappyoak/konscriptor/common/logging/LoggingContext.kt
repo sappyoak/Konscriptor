@@ -1,16 +1,17 @@
 package com.sappyoak.konscriptor.common.logging
 
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.selects.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlin.reflect.KClass
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 
-private const val BATCH_SIZE = 50
+import com.sappyoak.konscriptor.common.DEFAULT_LOG_EVENT_CHANNEL_SIZE
 
 class LoggingContext(private val rootDelegate: DelegateLogger, scope: CoroutineScope) {
-    private val channel: Channel<LogEvent> = Channel(capacity = 250)
+    private val channel: Channel<LogEvent> = Channel(capacity = DEFAULT_LOG_EVENT_CHANNEL_SIZE)
     private val loggers: MutableMap<String, Logger> = ConcurrentHashMap()
     private val sinks: MutableSet<LogEventSink> = CopyOnWriteArraySet()
 

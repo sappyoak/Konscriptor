@@ -5,14 +5,17 @@ import kotlin.coroutines.CoroutineContext
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
-private const val THREAD_POOL_COUNT = 10
+import com.sappyoak.konscriptor.common.INTERNAL_THREAD_POOL_SIZE
+import com.sappyoak.konscriptor.common.lifecycle.LifecycleAction
+import com.sappyoak.konscriptor.common.lifecycle.LifecycleObserver
+
 
 typealias ScopeCreator = (name: String, parentContext: CoroutineContext?) -> CoroutineScope
 
-class GlobalContext(platformScheduler: Scheduler) {
+class GlobalContext(platformScheduler: Scheduler) : LifecycleObserver {
     private val threadCount = AtomicInteger(0)
 
-    private val internalThreadPool = Executors.newFixedThreadPool(10) { runnable ->
+    private val internalThreadPool = Executors.newFixedThreadPool(INTERNAL_THREAD_POOL_SIZE) { runnable ->
         Thread(runnable, "konscriptor-${threadCount.incrementAndGet()}")
     }
 
@@ -36,6 +39,12 @@ class GlobalContext(platformScheduler: Scheduler) {
                CoroutineName("KonscriptorInternalScope") +
                Dispatchers.Internal
     )
+
+    override fun invoke(action: LifecycleAction) {
+        if (action == LifecycleAction.OnShutdown) {
+            close()
+        }
+    }
 
     /** Close the root scope and let structured concurrency work it's magic and cancel all of the child tasks **/
     fun close() {

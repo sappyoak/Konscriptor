@@ -41,6 +41,7 @@ interface Lifecycle {
 
     fun onReceive(action: LifecycleAction)
 
+    fun getObservers(): List<LifecycleObserverHandle>
     fun addObserver(observer: LifecycleObserverHandle)
     fun removeObserver(observer: LifecycleObserverHandle)
 

@@ -8,6 +8,10 @@ import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.whileSelect
 import kotlin.coroutines.CoroutineContext
 
+import com.sappyoak.konscriptor.common.DEFAULT_LOG_BATCH_SIZE
+import com.sappyoak.konscriptor.common.DEFAULT_LOG_EVENT_CHANNEL_SIZE
+import com.sappyoak.konscriptor.common.DEFAULT_LOG_TIMEOUT_MS
+
 typealias StringSender = suspend (String) -> Unit
 typealias EventBatchSender = suspend (List<String>) -> Unit
 
@@ -17,10 +21,10 @@ open class LogEventSink(
     override val coroutineContext: CoroutineContext
 ) : CoroutineScope {
     private val sinkChannel: Channel<String> by lazy {
-        val channel = Channel<String>(150)
+        val channel = Channel<String>(DEFAULT_LOG_EVENT_CHANNEL_SIZE)
         launch(CoroutineName("logging-sink-$name")) {
             while (true) {
-                val batch = receiveBatch(channel, 10, 100)
+                val batch = receiveBatch(channel, DEFAULT_LOG_TIMEOUT_MS, DEFAULT_LOG_BATCH_SIZE)
                 if (batch.isNotEmpty()) {
                     sender(batch)
                 }
