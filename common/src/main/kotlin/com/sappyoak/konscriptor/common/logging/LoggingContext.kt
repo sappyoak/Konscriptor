@@ -3,14 +3,16 @@ package com.sappyoak.konscriptor.common.logging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
+import kotlin.reflect.KClass
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 
-class LoggingContext(private val delegateProvider: DelegateProvider, scope: CoroutineScope) {
-    private val channel: Channel<String> = Channel(capacity = 250)
-    private val messages: MutableList<String> = mutableListOf()
+private const val BATCH_SIZE = 50
+
+class LoggingContext(private val rootDelegate: DelegateLogger, scope: CoroutineScope) {
+    private val channel: Channel<LogEvent> = Channel(capacity = 250)
     private val loggers: MutableMap<String, Logger> = ConcurrentHashMap()
-
-    private val rootDelegate: DelegateLogger by lazy { delegateProvider.get() }
+    private val sinks: MutableSet<LogEventSink> = CopyOnWriteArraySet()
 
     init {
         scope.launch {
@@ -18,8 +20,8 @@ class LoggingContext(private val delegateProvider: DelegateProvider, scope: Coro
         }
     }
 
-    fun consumeEvent(level: LogLevel, message: String, throwable: Throwable? = null) {
-        channel.trySend(message)
+    fun consumeEvent(event: LogEvent) {
+        channel.trySend(event)
     }
 
     fun getLogger(name: String): Logger {
@@ -29,26 +31,21 @@ class LoggingContext(private val delegateProvider: DelegateProvider, scope: Coro
         return logger
     }
 
-    // @TODO actually do some handling of the logs
-    private fun onReceive(action: String) {
-        messages.add(action)
+    fun getLogger(klass: KClass<*>): Logger {
+        return getLogger(getClassNameOf(klass) ?: "UnknownLogger")
+    }
+
+    inline fun <reified T> getLogger(): Logger = getLogger(T::class)
+
+    private suspend fun onReceive(action: LogEvent) {
+        val serialized = serializeLogEvent(action)
+        for (sink in sinks) {
+            sink.send(serialized)
+        }
     }
 }
 
-suspend fun <T> receiveBatch(
-    channel: ReceiveChannel<T>,
-    maxTimeMillis: Long,
-    maxSize: Int
-): List<T> {
-    val batch = mutableListOf<T>()
-    whileSelect {
-        onTimeout(maxTimeMillis) { false }
-        channel.onReceiveCatching { result ->
-            result.onFailure { if (it != null) throw it }
-                .onClosed { return@onReceiveCatching false }
-                .onSuccess { batch += it }
-            batch.size < maxSize
-        }
-    }
-    return batch
+internal fun getClassNameOf(owner: KClass<*>): String? {
+    return if (owner.isCompanion) owner.java.enclosingClass.name
+    else owner.java.name
 }

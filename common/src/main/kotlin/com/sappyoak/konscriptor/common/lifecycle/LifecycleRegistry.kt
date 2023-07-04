@@ -4,19 +4,20 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import java.util.concurrent.ConcurrentHashMap
 
+import com.sappyoak.konscriptor.common.concurrent.ScopeCreator
+
 /**
  * The lifecycle Registry is responsible for creating and coordinating the passing of actions through the
  * hierarchy
  */
 
-class LifecycleRegistry(private val rootContext: CoroutineContext) {
+class LifecycleRegistry(private val scopeCreator: ScopeCreator) {
     private val lifecycles = ConcurrentHashMap<LifecycleTag, Lifecycle>()
 
     fun createAndAddLifecycle(tag: LifecycleTag) {
         val parent = tag.parentTag?.let { lifecycles[it] }
         val name = if (parent == null) tag[0] else tag.split.last()
-        val lifecycle = Lifecycle(tag, createLifecycleScope(name, parent?.scope?.coroutineContext ?: rootContext))
-        lifecycles[tag] = lifecycle
+        lifecycles[tag] = Lifecycle(tag, scopeCreator(name, parent?.scope?.coroutineContext))
         parent?.addChildTag(tag)
     }
 
@@ -32,10 +33,5 @@ class LifecycleRegistry(private val rootContext: CoroutineContext) {
             lifecycle.onReceive(action)
             queue.addAll(lifecycle.childTags)
         }
-    }
-
-    private fun createLifecycleScope(name: String, context: CoroutineContext): CoroutineScope {
-        val job = SupervisorJob(parent = context.job)
-        return CoroutineScope(job + context + CoroutineName(name))
     }
 }
