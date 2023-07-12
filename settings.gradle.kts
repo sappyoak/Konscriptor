@@ -21,9 +21,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "konscriptor-root"
 
+include("api")
+include("core")
 include("common")
 include("paper-kotlin-dsl")
 include("script-compiler")
 include("script-host")
-include ("konscriptor")
 include("konscriptor-paper-plugin")
